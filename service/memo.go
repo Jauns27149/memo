@@ -1,67 +1,59 @@
 package service
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+	"fyne.io/fyne/v2/data/binding"
+	"log"
 	"memo/constant"
-	"memo/layout"
+	"memo/util"
+	"strings"
+	"time"
 )
 
-var Memo *fyne.Container
+type Data struct {
+	preferences fyne.Preferences
+	Memo        binding.StringList
+}
 
-func MemoRun() {
-	var plus *fyne.Container
-	entry := widget.NewEntry()
-	sure := widget.NewButton("确定", func() {
-		preferences := fyne.CurrentApp().Preferences()
-		o := Memo.Objects
-		button := widget.NewButton(entry.Text, nil)
-		button.OnTapped = func() {
-			Memo.Remove(button)
-			Memo.Add(button)
-			button.Disable()
-			preferences.SetStringList(
-				"done", append([]string{entry.Text}, preferences.StringList("done")...))
-		}
+func newData() *Data {
+	preferences := fyne.CurrentApp().Preferences()
 
-		Memo.Objects = append([]fyne.CanvasObject{o[0], o[1], button}, o[2:]...)
-		preferences.SetStringList(
-			"todo", append([]string{entry.Text}, preferences.StringList("todo")...))
-
-		entry.Text = ""
-		Memo.Refresh()
-		plus.Hide()
-	})
-	cancel := widget.NewButton("取消", func() {
-		plus.Hide()
-	})
-	plus = container.New(&layout.Item{}, entry, sure, cancel)
-	plus.Hide()
-
-	canvas := []fyne.CanvasObject{widget.NewButton(constant.AddChar, func() {
-		plus.Show()
-	}), plus}
-
-	preference := fyne.CurrentApp().Preferences()
-	todos := preference.StringList("todo")
-	dones := preference.StringList("done")
-	for i, v := range todos {
-		button := widget.NewButton(v, nil)
-		button.OnTapped = func() {
-			Memo.Remove(button)
-			Memo.Add(button)
-			button.Disable()
-			preference.SetStringList("done", append(dones, v))
-			preference.SetStringList("todo", append(todos[:i], todos[i+1:]...))
-		}
-		canvas = append(canvas, button)
+	return &Data{
+		preferences: preferences,
+		Memo:        binding.BindPreferenceStringList(constant.Memo, preferences),
 	}
-	for _, v := range dones {
-		b := widget.NewButton(v, nil)
-		canvas = append(canvas, b)
-		b.Disable()
+}
+
+func (d *Data) Add(item string) {
+	item = fmt.Sprintf("%s %s %s", item, time.Now().Format(time.DateTime), constant.Doing)
+	err := d.Memo.Append(item)
+	if err != nil {
+		log.Panicln(err)
 	}
 
-	Memo = container.NewVBox(canvas...)
+	util.SortMemo(d.Memo)
+	d.save()
+}
+
+func (d *Data) DoneItem(index int) {
+	value, err := d.Memo.GetValue(index)
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	err = d.Memo.SetValue(index, strings.ReplaceAll(value, constant.Doing, constant.Done))
+	if err != nil {
+		log.Panicln(err)
+	}
+	util.SortMemo(d.Memo)
+	d.save()
+}
+
+func (d *Data) save() {
+	items, err := d.Memo.Get()
+	if err != nil {
+		log.Panicln(err)
+	}
+	d.preferences.SetStringList(constant.Memo, items)
 }
