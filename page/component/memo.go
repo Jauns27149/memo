@@ -1,4 +1,4 @@
-package index
+package component
 
 import (
 	"fyne.io/fyne/v2"

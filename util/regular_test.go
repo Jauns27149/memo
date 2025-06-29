@@ -17,3 +17,17 @@ func TestGetItemNoTime(t *testing.T) {
 		}
 	}
 }
+
+func TestRestaurantHadTime(t *testing.T) {
+	result := GetItemNoTime("1")
+	if result != "1" {
+		panic(result)
+	}
+}
+
+func TestClearTime(t *testing.T) {
+	result := ClearTime("sample 2025-06-26 16:13:43")
+	if result != "sample" {
+		println(result)
+	}
+}

@@ -4,7 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"memo/constant"
-	"memo/page/index"
+	"memo/page/component"
 )
 
 type Index struct {
@@ -13,16 +13,16 @@ type Index struct {
 	eat  fyne.CanvasObject
 
 	content *fyne.Container
-	bottom  *index.Bottom
+	bottom  *component.Bottom
 	current int
 }
 
 func NewIndex() *Index {
 	return &Index{
-		memo:   index.NewMemo().Content(),
-		plan:   index.NewPlan().Content(),
-		eat:    index.NewEat().Content(),
-		bottom: index.NewBottom(),
+		memo:   component.NewMemo().Content(),
+		plan:   NewPlan().Content(),
+		eat:    NewEat().Content(),
+		bottom: component.NewBottom(),
 	}
 }
 

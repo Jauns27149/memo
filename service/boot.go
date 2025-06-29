@@ -10,4 +10,5 @@ func Boot() {
 	MemoService = newData()
 	PlanService = NewPlan()
 	EatService = NewEat()
+	listenerPref()
 }

@@ -1,9 +1,7 @@
 package service
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/data/binding"
 	"log"
 	"memo/constant"
 	"memo/util"
@@ -12,54 +10,62 @@ import (
 
 type Plan struct {
 	pref fyne.Preferences
-	Data map[string]binding.StringList
+
+	Day   []string
+	Week  []string
+	Month []string
 }
 
-func (p Plan) LoadData(group string) []string {
-	return []string{}
+func (p *Plan) LoadData() {
+	p.Day = p.loadItems(constant.Day)
+	p.Week = p.loadItems(constant.Week)
+	p.Month = p.loadItems(constant.Month)
+	log.Println("load plan data finished")
 }
 
-func (p Plan) Save(group string, text string) {
-	data := p.Data[group]
-	err := data.Append(text)
-	if err != nil {
-		log.Panicln(err)
-	}
-	items, err := data.Get()
-	if err != nil {
-		log.Panicln(err)
-	}
-	p.pref.SetStringList(group, items)
-	log.Printf("save items successfully, key: %v, value: %v\n", group, items)
+func (p *Plan) Save(span string, text string) {
+	list := p.pref.StringList(span)
+	p.set(span, append(list, text))
+	log.Printf("save items successfully")
 }
 
-func (p Plan) Done(ii int, span string, text string) {
-	text = fmt.Sprintf("%s %s", text, time.Now().Format(time.DateTime))
-	items, err := p.Data[span].Get()
-	if err != nil {
-		log.Panicln(err)
-	}
-	items[ii] = text
-	err = p.Data[span].Remove(items[0])
-	if err != nil {
-		log.Panicln(err)
-	}
+func (p *Plan) Done(ii int, span string) {
+	list := p.Item(span)
+	list[ii] = list[ii] + " " + time.Now().Format(time.DateTime)
+	p.set(span, list)
+	log.Printf("item done successfully")
+}
 
-	util.SortPlanItems(items)
-	err = p.Data[span].Set(items)
-	if err != nil {
-		log.Panicln(err)
+func (p *Plan) set(span string, list []string) {
+	// 确保监听函数触发，数量没有变化的时候不会触发
+	p.pref.SetStringList(span, []string{})
+	p.pref.SetStringList(span, list)
+}
+
+func (p *Plan) loadItems(span string) []string {
+	list := p.pref.StringList(span)
+	util.SortPlanItems(list)
+	return list
+}
+
+func (p *Plan) Item(span string) []string {
+	var list []string
+	switch span {
+	case constant.Day:
+		list = p.Day
+	case constant.Week:
+		list = p.Week
+	case constant.Month:
+		list = p.Month
 	}
+	return list
 }
 
 func NewPlan() *Plan {
 	pref := fyne.CurrentApp().Preferences()
-	dataMap := make(map[string]binding.StringList)
-	for _, v := range []string{constant.Day, constant.Week, constant.Month} {
-		dataMap[v] = binding.BindPreferenceStringList(v, pref)
-	}
-	return &Plan{
+	plan := &Plan{
 		pref: pref,
-		Data: dataMap,
 	}
+	plan.LoadData()
+	return plan
 }
