@@ -1,7 +1,7 @@
 package service
 
 var (
-	MemoService *Data
+	MemoService *Memo
 	PlanService *Plan
 	EatService  *Eat
 )

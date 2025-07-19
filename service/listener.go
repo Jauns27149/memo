@@ -8,9 +8,11 @@ import (
 func listenerPref() {
 	fyne.CurrentApp().Preferences().AddChangeListener(func() {
 		EatService.LoadRestaurants()
-		PlanService.LoadData()
+		//PlanService.LoadData()
 
-		fyne.CurrentApp().Driver().AllWindows()[0].Content().Refresh()
+		if w := fyne.CurrentApp().Driver().AllWindows(); len(w) > 0 {
+			w[0].Content().Refresh()
+		}
 		log.Printf("listenter data change %v \n", EatService.Data)
 	})
 }

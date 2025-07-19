@@ -34,12 +34,6 @@ func (e *Eat) Content() fyne.CanvasObject {
 				}
 				content.Add(container.NewCenter(e.contents[ii]))
 
-			case 2:
-				e.contents[ii].(*widget.Entry).OnSubmitted = func(restaurant string) {
-					service.EatService.Save(restaurant)
-					content.Objects = append(content.Objects, box)
-				}
-				content.Add(container.NewVBox(layout.NewSpacer(), e.contents[ii], layout.NewSpacer()))
 			case 1:
 				b := e.contents[ii].(*fyne.Container).Objects[1].(*widget.Button)
 				b.Alignment = widget.ButtonAlignTrailing
@@ -47,6 +41,14 @@ func (e *Eat) Content() fyne.CanvasObject {
 					content.Objects = []fyne.CanvasObject{box}
 				}
 				content.Add(e.contents[ii])
+
+			case 2:
+				e.contents[ii].(*widget.Entry).OnSubmitted = func(restaurant string) {
+					service.EatService.Save(restaurant)
+					content.Objects = append(content.Objects, box)
+				}
+				content.Add(container.NewVBox(layout.NewSpacer(), e.contents[ii], layout.NewSpacer()))
+
 			}
 			e.current = ii
 		}

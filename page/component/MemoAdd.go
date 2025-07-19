@@ -1,4 +1,4 @@
-package memo
+package component
 
 import (
 	"fyne.io/fyne/v2"
@@ -8,11 +8,11 @@ import (
 	"memo/service"
 )
 
-type Add struct {
+type MemoAdd struct {
 	Content fyne.CanvasObject
 }
 
-func NewAdd() *Add {
+func NewMemoAdd() *MemoAdd {
 	add := widget.NewButton("+", nil)
 	item := widget.NewEntry()
 	item.SetPlaceHolder(constant.MemoHolder)
@@ -31,7 +31,7 @@ func NewAdd() *Add {
 		item.SetText("")
 	}
 
-	return &Add{
+	return &MemoAdd{
 		Content: container.NewVBox(add, item),
 	}
 }

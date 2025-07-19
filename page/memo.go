@@ -1,9 +1,9 @@
-package component
+package page
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"memo/page/index/memo"
+	"memo/page/component"
 )
 
 type Memo struct {
@@ -14,8 +14,8 @@ type Memo struct {
 
 func NewMemo() *Memo {
 	return &Memo{
-		add:   memo.NewAdd().Content,
-		items: memo.NewItems().Content(),
+		add:   component.NewMemoAdd().Content,
+		items: component.NewItems().Content(),
 	}
 }
 
@@ -24,6 +24,6 @@ func (m *Memo) Content() fyne.CanvasObject {
 		return m.content
 	}
 
-	m.content = container.NewVBox(m.add, m.items)
+	m.content = container.NewBorder(m.add, nil, nil, nil, m.items)
 	return m.content
 }

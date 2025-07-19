@@ -34,7 +34,7 @@ func RestaurantHadTime(s string) bool {
 
 func ClearTime(s string) string {
 	reg := regexp.MustCompile(`^[^ ]+`)
-	return reg.FindString(s)
+	return reg.FindString(strings.TrimSpace(s))
 }
 
 func GetTime(v string) (time.Time, error) {

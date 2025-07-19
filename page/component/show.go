@@ -3,6 +3,7 @@ package component
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"memo/service"
 )
@@ -17,15 +18,27 @@ func (s *Show) Content() fyne.CanvasObject {
 }
 
 func NewShow() *Show {
-	list := widget.NewList(
+	var list *widget.List
+	list = widget.NewList(
 		func() int {
 			return len(service.EatService.Data)
 		},
 		func() fyne.CanvasObject {
-			return widget.NewLabel("")
+			return container.NewHBox()
 		},
 		func(id widget.ListItemID, object fyne.CanvasObject) {
-			object.(*widget.Label).SetText(service.EatService.Data[id])
+			c := object.(*fyne.Container)
+			c.RemoveAll()
+			button := widget.NewButton("删除", func() {
+				service.EatService.Delete(id)
+				list.Refresh()
+			})
+			button.Importance = widget.HighImportance
+			label := widget.NewLabel(service.EatService.Data[id])
+			c.Add(label)
+			c.Add(layout.NewSpacer())
+			c.Add(button)
+			list.SetItemHeight(id, c.MinSize().Height)
 		},
 	)
 

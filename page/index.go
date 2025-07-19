@@ -19,7 +19,7 @@ type Index struct {
 
 func NewIndex() *Index {
 	return &Index{
-		memo:   component.NewMemo().Content(),
+		memo:   NewMemo().Content(),
 		plan:   NewPlan().Content(),
 		eat:    NewEat().Content(),
 		bottom: component.NewBottom(),

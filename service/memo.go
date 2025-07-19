@@ -1,59 +1,55 @@
 package service
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/data/binding"
 	"log"
 	"memo/constant"
+	"memo/convert"
+	"memo/model"
 	"memo/util"
 	"strings"
 	"time"
 )
 
-type Data struct {
+type Memo struct {
 	preferences fyne.Preferences
-	Memo        binding.StringList
+	items       []model.MemoItem
+	AddChan     chan bool
 }
 
-func newData() *Data {
+func (d *Memo) GetItems() []model.MemoItem {
+	util.SortMemo(d.items)
+	return d.items
+}
+
+func newData() *Memo {
 	preferences := fyne.CurrentApp().Preferences()
-
-	return &Data{
+	memo := preferences.StringList(constant.Memo)
+	item, err := convert.RowsToMemo(memo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &Memo{
 		preferences: preferences,
-		Memo:        binding.BindPreferenceStringList(constant.Memo, preferences),
+		items:       item,
+		AddChan:     make(chan bool, 1),
 	}
 }
 
-func (d *Data) Add(item string) {
-	item = fmt.Sprintf("%s %s %s", item, time.Now().Format(time.DateTime), constant.Doing)
-	err := d.Memo.Append(item)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	util.SortMemo(d.Memo)
-	d.save()
+func (d *Memo) Add(item string) {
+	memoItem := model.MemoItem{Item: model.Item{Content: strings.TrimSpace(item), CreateTime: time.Now()}, Finished: false}
+	d.items = append(d.items, memoItem)
+	util.SortMemo(d.items)
+	d.preferences.SetStringList(constant.Memo, convert.MemosToRows(d.items))
+	d.AddChan <- true
 }
 
-func (d *Data) DoneItem(index int) {
-	value, err := d.Memo.GetValue(index)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	err = d.Memo.SetValue(index, strings.ReplaceAll(value, constant.Doing, constant.Done))
-	if err != nil {
-		log.Panicln(err)
-	}
-	util.SortMemo(d.Memo)
-	d.save()
+func (d *Memo) Finished(index int) {
+	d.items[index].Finished = true
+	d.preferences.SetStringList(constant.Memo, convert.MemosToRows(d.items))
 }
 
-func (d *Data) save() {
-	items, err := d.Memo.Get()
-	if err != nil {
-		log.Panicln(err)
-	}
-	d.preferences.SetStringList(constant.Memo, items)
+func (d *Memo) Delete(index int) {
+	d.items = append(d.items[:index], d.items[index+1:]...)
+	d.preferences.SetStringList(constant.Memo, convert.MemosToRows(d.items))
 }

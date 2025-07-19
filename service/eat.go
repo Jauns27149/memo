@@ -2,7 +2,6 @@ package service
 
 import (
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/widget"
 	"log"
 	"memo/constant"
 	"memo/util"
@@ -38,7 +37,7 @@ func (e *Eat) LoadRestaurants() {
 	log.Printf("load restaurant success %v \n", e.Data)
 }
 
-func (e *Eat) Delete(id widget.ListItemID) {
+func (e *Eat) Delete(id int) {
 	list := e.Data
 	e.setRestaurants(append(list[:id], list[id+1:]...))
 	log.Printf("delete %v success\n", list[id])
@@ -46,15 +45,20 @@ func (e *Eat) Delete(id widget.ListItemID) {
 
 func (e *Eat) setRestaurants(list []string) {
 	e.pref.SetStringList(constant.Restaurant, list)
+	log.Println("set restaurants finish")
 }
 
 func (e *Eat) RandRestaurant() string {
 	data := e.Data
-	for _, v := range data {
+
+	for i, v := range data {
 		if util.RestaurantHadTime(v) {
 			t, _ := util.GetTime(v)
 			if t.Add(3 * time.Hour).After(time.Now()) {
 				return util.ClearTime(v) + " 已经选过了"
+			} else {
+				data[i] = util.ClearTime(v)
+				e.setRestaurants(data)
 			}
 			break
 		}

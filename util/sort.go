@@ -1,54 +1,23 @@
 package util
 
 import (
-	"fyne.io/fyne/v2/data/binding"
-	"log"
-	"memo/constant"
+	"memo/model"
 	"sort"
-	"strings"
 )
 
-func SortMemo(memo binding.StringList) {
-	items, err := memo.Get()
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	var done, doing []string
-	for _, item := range items {
-		if strings.Contains(item, constant.Done) {
-			done = append(done, item)
-		} else {
-			doing = append(doing, item)
+func SortMemo(memo []model.MemoItem) {
+	sort.Slice(memo, func(i, j int) bool {
+		if memo[j].Finished != memo[i].Finished {
+			return memo[j].Finished
 		}
-	}
-
-	sortMemo(done)
-	sortMemo(doing)
-
-	// 改变值不触发更新，这个只是触发更新，没有实际作用
-	err = memo.Remove(items[0])
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	err = memo.Set(append(doing, done...))
-	if err != nil {
-		log.Panicln(err)
-	}
-	log.Println("sort items success")
-}
-
-func sortMemo(items []string) {
-	sort.Slice(items, func(i, j int) bool {
-		return findTime(items[i]).After(findTime(items[j]))
+		return memo[i].CreateTime.After(memo[j].CreateTime)
 	})
 }
 
-func SortPlanItems(items []string) {
+func SortPlanItems(items []model.Item) {
 	end := len(items)
 	for i := 0; i < end; i++ {
-		if HadTime(items[i]) && i != end-1 {
+		if !items[i].CreateTime.IsZero() && i != end-1 {
 			items[i], items[end-1] = items[end-1], items[i]
 			i--
 			end--

@@ -5,85 +5,89 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"log"
-	"memo/constant"
+	"memo/model"
 	"memo/service"
-	"memo/util"
 )
 
-type Span = string
-
 type Group struct {
-	head  []fyne.CanvasObject
-	items *widget.List
-	add   *widget.Entry
-	span  Span
+	content fyne.CanvasObject
+	span    string
+	delete  bool
 }
 
 func (g *Group) Content() fyne.CanvasObject {
-	objects := make([]fyne.CanvasObject, len(g.head))
-	for i, item := range g.head {
-		objects[i] = item
-	}
-	border := container.NewBorder(nil, nil, nil, objects[1], objects[0])
-
-	g.add.Hide()
-	g.add.OnSubmitted = func(s string) {
-		service.PlanService.Save(g.span, s)
-		g.add.Hide()
-		g.items.Refresh()
+	if g.content != nil {
+		return g.content
 	}
 
-	head := container.NewVBox(border, g.add)
-	return container.NewBorder(head, nil, nil, nil, g.items)
-}
-
-func NewGroup(span Span) *Group {
-	add := widget.NewEntry()
-
-	label := widget.NewLabel(span)
-	button := widget.NewButton(constant.AddChar, nil)
-	button.OnTapped = func() {
-		add.Show()
-	}
-	head := []fyne.CanvasObject{label, button}
 	var list *widget.List
 	list = widget.NewList(
 		func() int {
-			return len(service.PlanService.Item(span))
+			return len(g.items())
 		},
 		func() fyne.CanvasObject {
-			b := widget.NewButton("", nil)
-			b.Alignment = widget.ButtonAlignLeading
-			return b
+			button := widget.NewButton("delete", nil)
+			button.Importance = widget.DangerImportance
+			return container.NewBorder(nil, nil, nil, button, nil)
 		},
-		func(id widget.ListItemID, item fyne.CanvasObject) {
-			button := item.(*widget.Button)
-			s := service.PlanService.Item(span)[id]
-			button.SetText(s)
-			button.OnTapped = func() {
-				service.PlanService.Done(id, span)
-				list.Refresh()
+		func(i widget.ListItemID, object fyne.CanvasObject) {
+			c := object.(*fyne.Container)
+			c.Objects = c.Objects[:1]
+			if g.delete {
+				c.Objects[0].Show()
+			} else {
+				c.Objects[0].Hide()
 			}
-			if util.HadTime(s) {
-				time, err := util.GetTime(s)
-				if err != nil {
-					log.Panicln(err.Error())
-				}
-				updateTime := util.LatePan(span, time)
-				if time.Before(updateTime) {
-					service.PlanService.Save(span, util.ClearTime(s))
-				} else {
-					button.SetText(util.ClearTime(s))
-					button.Disable()
-				}
+			button := widget.NewButton("", nil)
+			button.Alignment = widget.ButtonAlignLeading
+			items := g.items()
+			button.SetText(items[i].Content)
+			button.OnTapped = func() {
+				service.PlanService.Finished(g.span, i)
+				log.Println("finished item")
+			}
+			c.Add(button)
+			if items[i].CreateTime.IsZero() {
+				button.Enable()
+			} else {
+				button.Disable()
 			}
 		},
 	)
 
+	go g.listener(list)
+
+	g.content = list
+	return g.content
+}
+
+func (g *Group) listener(list *widget.List) {
+	for {
+		select {
+		case <-service.PlanService.Update[g.span]:
+			fyne.Do(func() {
+				list.Refresh()
+			})
+		case value := <-service.PlanService.Delete[g.span]:
+			fyne.Do(func() {
+				g.delete = value
+				list.Refresh()
+			})
+		}
+	}
+}
+
+func (g *Group) items() []model.Item {
+	for _, v := range service.PlanService.Items {
+		if g.span == v.Span {
+			return v.Items
+		}
+	}
+	return []model.Item{}
+}
+
+func NewGroup(span string) *Group {
 	return &Group{
-		head:  head,
-		items: list,
-		add:   add,
-		span:  span,
+		span: span,
 	}
 }
